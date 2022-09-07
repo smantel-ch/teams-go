@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"log"
 	"os"
 
@@ -9,29 +8,82 @@ import (
 )
 
 func main() {
-	card := teams.NewAdaptiveCard()
-
-	tb1 := teams.NewTextBlock("TextBlock 1")
-	card.Body = append(card.Body, tb1)
-
-	json, err := json.Marshal(card)
-	if err != nil {
+	testMsg := teams.AdaptiveCard{
+		Type:    teams.TypeAdaptiveCard,
+		Version: teams.Version13,
+		Body: []teams.Element{
+			&teams.Container{
+				Type:      teams.TypeContainer,
+				Separator: true,
+				Spacing:   teams.SpacingExtraLarge,
+				Items: []teams.Element{
+					&teams.TextBlock{
+						Type: teams.TypeTextBlock,
+						Text: "**alertWatcher triggered a new Alert**",
+					},
+					&teams.TextBlock{
+						Type:    teams.TypeTextBlock,
+						Text:    "fruit.bananana",
+						Spacing: teams.SpacingNone,
+						Size:    teams.FontSizeSmall,
+					},
+				},
+			},
+			&teams.Container{
+				Type:      teams.TypeContainer,
+				Separator: true,
+				Spacing:   teams.SpacingExtraLarge,
+				Items: []teams.Element{
+					&teams.FactSet{
+						Type: teams.TypeFactSet,
+						Facts: []teams.Fact{
+							{
+								Title: "Ruleset",
+								Value: "bananana",
+							},
+							{
+								Title: "Date/Time",
+								Value: "Fri, 02 Sep 2022 08:11:50 CEST",
+							},
+							{
+								Title: "Severity",
+								Value: "EXTREME",
+							},
+							{
+								Title: "Status",
+								Value: "🔥 FIRING",
+							},
+						},
+					},
+				},
+			},
+			&teams.Container{
+				Type:      teams.TypeContainer,
+				Separator: true,
+				Spacing:   teams.SpacingExtraLarge,
+				Items: []teams.Element{
+					&teams.ActionSet{
+						Type: teams.TypeActionSet,
+						Actions: []teams.Action{
+							&teams.ActionOpenUrl{
+								Type:  teams.TypeActionOpenUrl,
+								Title: "Open in 4Dmetrics",
+								Url:   "https://4dmetrics.4data.ch",
+							},
+						},
+					},
+				},
+			},
+		},
 	}
-	log.Println(string(json))
 
 	webhookUrl := os.Getenv("TEAMS_WEBHOOK")
 
-	webhook := teams.NewWebhook(webhookUrl)
-	if err := webhook.Send(&teams.Message{
-		Type: "message",
-		Attachments: []teams.Attachment{
-			{
-				ContentType: "application/vnd.microsoft.card.adaptive",
-				ContentUrl:  "",
-				Content:     card,
-			},
-		},
-	}); err != nil {
+	webhook, err := teams.NewWebhook(webhookUrl)
+	if err != nil {
+		log.Println(err)
+	}
+	if err := webhook.Send(&testMsg); err != nil {
 		log.Println(err)
 	}
 
